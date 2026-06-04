@@ -7,4 +7,13 @@ services:
       - "5432:5432"
     build: 
       dockerfile: db/dockerfile
+    volumes:
+      - pgdata:/var/lib/postgresql
       
+volumes:
+  pgdata:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./db/data
