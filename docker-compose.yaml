@@ -1,0 +1,10 @@
+services:
+  main-db:
+    env_file:
+      - path: ./db/default.env
+        required: true
+    ports:
+      - "5432:5432"
+    build: 
+      dockerfile: db/dockerfile
+      
