@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"just-a-payment-gateway/backend/internal/auth/tokens"
 	"log"
 	"time"
 
@@ -10,10 +11,6 @@ import (
 
 	"github.com/lib/pq"
 )
-
-type EnvDB struct {
-	DB *sql.DB
-}
 
 func main() {
 	err := godotenv.Load("../default.env")
@@ -36,10 +33,10 @@ func main() {
 	db := sql.OpenDB(c)
 	defer db.Close()
 
-	env := &EnvDB{DB: db}
+	tokenHandler := tokens.NewHandler(db)
 	router := gin.Default()
 
 	router.GET("/health", healthCheck)
-	router.POST("/v1/tokens", env.postTokenizeCard)
+	router.POST("/v1/tokens", tokenHandler.PostTokenizeCard)
 	router.Run()
 }

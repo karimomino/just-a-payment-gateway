@@ -1,4 +1,4 @@
-package main
+package crypto
 
 import (
 	"crypto/aes"
@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-func encryptPAN(plaintext []byte) ([]byte, []byte, error) {
+func EncryptPAN(plaintext []byte) ([]byte, []byte, error) {
 	key := []byte(os.Getenv("PAN_CRYPTO_KEY"))
 	block, err := aes.NewCipher(key)
 	if err != nil {

@@ -1,0 +1,73 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1780903460467,
+  "projectRoot": "/Users/karimamin/Desktop/just-a-payment-gateway/backend/src",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Go",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "go.mod"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "go",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "internal": {
+      "path": "internal",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1780903460460,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "internal/auth/tokens/handler.go",
+      "accessCount": 2,
+      "lastAccessed": 1780909326149,
+      "type": "file"
+    },
+    {
+      "path": "internal/db/db.go",
+      "accessCount": 1,
+      "lastAccessed": 1780908156672,
+      "type": "file"
+    },
+    {
+      "path": "main.go",
+      "accessCount": 1,
+      "lastAccessed": 1780908237697,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
