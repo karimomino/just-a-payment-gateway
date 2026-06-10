@@ -2,11 +2,13 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"just-a-payment-gateway/backend/internal/auth/tokens"
 	"log"
+	"net"
+	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
 	"github.com/lib/pq"
@@ -34,9 +36,23 @@ func main() {
 	defer db.Close()
 
 	tokenHandler := tokens.NewHandler(db)
-	router := gin.Default()
+	http.HandleFunc("/health", healthCheck)
+	http.HandleFunc("/v1/tokens", tokenHandler.PostTokenizeCard)
+	// router := gin.Default()
 
-	router.GET("/health", healthCheck)
-	router.POST("/v1/tokens", tokenHandler.PostTokenizeCard)
-	router.Run()
+	// router.GET("/health", healthCheck)
+	// router.POST("/v1/tokens", tokenHandler.PostTokenizeCard)
+	// router.Run()
+	PORT := "8080"
+	listener, err := net.Listen("tcp", ":"+PORT)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Server started listening on port: %s\nBase url is: http://localhost:%s\n", PORT, PORT)
+	http.Serve(listener, nil)
+
+	if err := http.ListenAndServe(":"+PORT, nil); err != nil {
+		log.Fatal(err)
+	}
+	// log.Fatal(http.ListenAndServe(":"+PORT, nil))
 }

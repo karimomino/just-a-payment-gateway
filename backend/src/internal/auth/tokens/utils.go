@@ -8,7 +8,7 @@ import (
 )
 
 func LuhnCheckPassed(cardNumber string) (bool, error) {
-	cardNetwork := GetBrand(cardNumber)
+	cardNetwork := GetBrand(cardNumber[:6])
 	len := len(cardNumber)
 	customError := errors.New("Invalid card number.")
 
@@ -26,7 +26,7 @@ func LuhnCheckPassed(cardNumber string) (bool, error) {
 			return false, customError
 		}
 	case CardBrand.ERROR, CardBrand.UNKOWN:
-		return false, errors.New("Invalid car number or we don't support this car network.")
+		return false, errors.New("Invalid card number or we don't support this car network.")
 	default:
 		break
 	}
@@ -52,15 +52,16 @@ func luhnCheck(cardNumber string, len int) error {
 			return errors.New("Invalid card number.")
 		}
 
-		digit := int(char)
+		digit := int(char - '0')
 
 		if alternate {
-			doubled := digit * 2
-			if doubled > 19 {
+			digit *= 2
+			if digit > 9 {
 				digit -= 9
 			}
 		}
 		sum += digit
+		alternate = !alternate
 	}
 
 	if sum%10 != 0 {

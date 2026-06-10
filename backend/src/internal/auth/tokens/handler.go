@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -11,8 +12,6 @@ import (
 
 	"just-a-payment-gateway/backend/internal/crypto"
 	"just-a-payment-gateway/backend/internal/models"
-
-	"github.com/gin-gonic/gin"
 )
 
 type CardBrandSpace struct {
@@ -35,20 +34,49 @@ func NewHandler(db *sql.DB) *Handler {
 	return &Handler{DB: db}
 }
 
-func (e *Handler) PostTokenizeCard(c *gin.Context) {
-	var newCardRequest models.TokenizeCardRequest
-
-	if err := c.BindJSON(&newCardRequest); err != nil {
+func bindRequest(r *http.Request, card *models.Card) error {
+	var request models.TokenizeCardRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		log.Fatal(err)
-		return
+		return err
 	}
-	card := newCardRequest.Card
+	*card = request.Card
 	replacer := strings.NewReplacer(" ", "", "-", "")
 	card.Number = replacer.Replace(card.Number)
+	return nil
+}
 
-	err := runChecks(card)
-	if err != nil {
-		c.IndentedJSON(http.StatusPaymentRequired, gin.H{"error": err.Error()})
+type ApiError struct {
+	StatusCode int    `json:"status"`
+	Error      string `json:"error,omitempty"`
+}
+
+func SendError(statusCode int, message string, w http.ResponseWriter) {
+	error := ApiError{
+		StatusCode: statusCode,
+		Error:      message,
+	}
+
+	w.WriteHeader(error.StatusCode)
+	json.NewEncoder(w).Encode(error)
+}
+
+func SendSuccess(statusCode int, data any, w http.ResponseWriter) {
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(data)
+}
+
+func (e *Handler) PostTokenizeCard(w http.ResponseWriter, r *http.Request) {
+	var card models.Card
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := bindRequest(r, &card); err != nil {
+		SendError(http.StatusPaymentRequired, err.Error(), w)
+		return
+	}
+
+	if err := runChecks(card); err != nil {
+		SendError(http.StatusPaymentRequired, err.Error(), w)
 		return
 	}
 
@@ -61,12 +89,13 @@ func (e *Handler) PostTokenizeCard(c *gin.Context) {
 	byteData := buff.Bytes()
 	encrypted_card, _, err := crypto.EncryptPAN([]byte(byteData))
 	if err != nil {
+		SendError(http.StatusInternalServerError, "", w)
 		return
 	}
 
-	vault_id, err := e.SaveCardTransaciton(encrypted_card, c)
+	vault_id, err := e.SaveCardTransaciton(encrypted_card, w)
 	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, err)
+		SendError(http.StatusPaymentRequired, err.Error(), w)
 		return
 	}
 
@@ -79,9 +108,12 @@ func (e *Handler) PostTokenizeCard(c *gin.Context) {
 		ExpYear:     int16(card.Exp_Year),
 	}
 
-	e.GenerateTokenTransaction(&token, c)
+	if err := e.GenerateTokenTransaction(&token, w); err != nil {
+		SendError(http.StatusPaymentRequired, err.Error(), w)
+		return
+	}
 
-	c.IndentedJSON(http.StatusCreated, token)
+	SendSuccess(http.StatusCreated, token, w)
 }
 
 func runChecks(card models.Card) error {
