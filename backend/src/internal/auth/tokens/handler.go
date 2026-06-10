@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/gob"
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
+	"strings"
 
 	"just-a-payment-gateway/backend/internal/crypto"
 	"just-a-payment-gateway/backend/internal/models"
@@ -42,6 +43,14 @@ func (e *Handler) PostTokenizeCard(c *gin.Context) {
 		return
 	}
 	card := newCardRequest.Card
+	replacer := strings.NewReplacer(" ", "", "-", "")
+	card.Number = replacer.Replace(card.Number)
+
+	err := runChecks(card)
+	if err != nil {
+		c.IndentedJSON(http.StatusPaymentRequired, gin.H{"error": err.Error()})
+		return
+	}
 
 	var buff bytes.Buffer
 	enc := gob.NewEncoder(&buff)
@@ -50,8 +59,6 @@ func (e *Handler) PostTokenizeCard(c *gin.Context) {
 		panic(err)
 	}
 	byteData := buff.Bytes()
-
-	fmt.Println(byteData)
 	encrypted_card, _, err := crypto.EncryptPAN([]byte(byteData))
 	if err != nil {
 		return
@@ -75,4 +82,17 @@ func (e *Handler) PostTokenizeCard(c *gin.Context) {
 	e.GenerateTokenTransaction(&token, c)
 
 	c.IndentedJSON(http.StatusCreated, token)
+}
+
+func runChecks(card models.Card) error {
+	if !DateChecksPassed(card.Exp_Month, card.Exp_Year) {
+		return errors.New("Card is Expired.")
+	}
+
+	passed, err := LuhnCheckPassed(card.Number)
+	if passed != true {
+		return err
+	}
+
+	return nil
 }
